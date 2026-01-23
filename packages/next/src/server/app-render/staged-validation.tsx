@@ -33,3 +33,64 @@ export async function anySegmentHasRuntimePrefetchEnabled(
 
   return false
 }
+
+export async function anySegmentIsBlocking(tree: LoaderTree): Promise<boolean> {
+  const { mod: layoutOrPageMod } = await getLayoutOrPageModule(tree)
+
+  // TODO(restart-on-cache-miss): Does this work correctly for client page/layout modules?
+  const prefetchConfig = layoutOrPageMod
+    ? (layoutOrPageMod as AppSegmentConfig).unstable_prefetch
+    : undefined
+
+  const isBlocking = prefetchConfig === false
+  if (isBlocking) {
+    return true
+  }
+
+  const { parallelRoutes } = parseLoaderTree(tree)
+  for (const parallelRouteKey in parallelRoutes) {
+    const parallelRoute = parallelRoutes[parallelRouteKey]
+    const subtreeIsBlocking = await anySegmentIsBlocking(parallelRoute)
+    if (subtreeIsBlocking) {
+      return true
+    }
+  }
+
+  return false
+}
+
+type FoundSegmentWithConfig = {
+  path: string[]
+  config: NonNullable<AppSegmentConfig['unstable_prefetch']>
+}
+
+export async function findSegmentsWithPrefetchConfig(
+  rootTree: LoaderTree
+): Promise<FoundSegmentWithConfig[]> {
+  const results: FoundSegmentWithConfig[] = []
+
+  async function visit(tree: LoaderTree, path: string[]): Promise<void> {
+    const { mod: layoutOrPageMod } = await getLayoutOrPageModule(tree)
+
+    // TODO(restart-on-cache-miss): Does this work correctly for client page/layout modules?
+    const prefetchConfig = layoutOrPageMod
+      ? (layoutOrPageMod as AppSegmentConfig).unstable_prefetch
+      : undefined
+    /** Whether this segment should use a runtime prefetch instead of a static prefetch. */
+    if (prefetchConfig !== undefined) {
+      results.push({
+        path,
+        config: prefetchConfig,
+      })
+    }
+
+    const { parallelRoutes } = parseLoaderTree(tree)
+    for (const parallelRouteKey in parallelRoutes) {
+      const childTree = parallelRoutes[parallelRouteKey]
+      await visit(childTree, [...path, parallelRouteKey])
+    }
+  }
+
+  await visit(rootTree, [])
+  return results
+}

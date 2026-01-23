@@ -25,7 +25,7 @@ const StaticPrefetchSchema = z
   .object({
     mode: z.literal('static'),
     from: z.array(z.string()).optional(),
-    expectUnableToVerify: z.boolean().optional(),
+    unstable_disableValidation: z.boolean().optional(),
   })
   .strict()
 
@@ -34,7 +34,7 @@ const RuntimePrefetchSchema = z
     mode: z.literal('runtime'),
     samples: z.array(RuntimeSampleSchema).min(1),
     from: z.array(z.string()).optional(),
-    expectUnableToVerify: z.boolean().optional(),
+    unstable_disableValidation: z.boolean().optional(),
   })
   .strict()
 const NoPrefetchSchema = z.literal(false)
@@ -56,18 +56,18 @@ interface __GenericPrefetch {
   mode: string
   samples?: Array<WideRuntimeSample>
   from?: string[]
-  expectUnableToVerify?: boolean
+  unstable_disableValidation?: boolean
 }
 interface StaticPrefetch {
   mode: 'static'
   from?: string[]
-  expectUnableToVerify?: boolean
+  unstable_disableValidation?: boolean
 }
 interface RuntimePrefetch {
   mode: 'runtime'
   samples: Array<RuntimeSample>
   from?: string[]
-  expectUnableToVerify?: boolean
+  unstable_disableValidation?: boolean
 }
 type WideRuntimeSample = {
   cookies?: RuntimeSample['cookies']
