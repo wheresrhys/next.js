@@ -334,6 +334,7 @@ impl EcmascriptChunkPlaceable for EcmascriptModuleFacadeModule {
         let exports = EsmExports {
             exports,
             star_exports,
+            mangled_names: None, // Facade uses original names; mangling happens in locals
         }
         .resolved_cell();
         Ok(EcmascriptExports::EsmExports(exports).cell())

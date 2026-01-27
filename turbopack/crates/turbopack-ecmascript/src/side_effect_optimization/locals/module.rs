@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 
 use anyhow::{Result, bail};
+use turbo_rcstr::RcStr;
 use turbo_tasks::{ResolvedVc, Vc};
+use turbo_tasks_hash::shorten_to_unique_hashes;
 use turbopack_core::{
     chunk::{
         AsyncModuleInfo, ChunkableModule, ChunkingContext, MergeableModule, MergeableModules,
@@ -156,9 +158,26 @@ impl EcmascriptChunkPlaceable for EcmascriptModuleLocalsModule {
             }
         }
 
+        // Compute mangled names for all exports
+        // This is deterministic and stable across chunking contexts
+        let mangled_names = if exports.is_empty() {
+            None
+        } else {
+            let exports_to_mangle: Vec<_> = exports
+                .keys()
+                .map(|name| (name.clone(), name.to_string()))
+                .collect();
+            let mangled: BTreeMap<RcStr, RcStr> = shorten_to_unique_hashes(exports_to_mangle, 1)
+                .into_iter()
+                .map(|(k, v)| (k, RcStr::from(v)))
+                .collect();
+            Some(mangled)
+        };
+
         let exports = EsmExports {
             exports,
             star_exports: vec![],
+            mangled_names,
         }
         .resolved_cell();
         Ok(EcmascriptExports::EsmExports(exports).cell())
