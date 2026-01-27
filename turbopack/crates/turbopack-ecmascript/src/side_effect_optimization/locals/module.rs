@@ -158,11 +158,10 @@ impl EcmascriptChunkPlaceable for EcmascriptModuleLocalsModule {
             }
         }
 
-        // Compute mangled names for all exports
+        // Compute mangled names for all exports if enabled
         // This is deterministic and stable across chunking contexts
-        let mangled_names = if exports.is_empty() {
-            None
-        } else {
+        let options = self.module.options().await?;
+        let mangled_names = if options.mangle_export_names && !exports.is_empty() {
             let exports_to_mangle: Vec<_> = exports
                 .keys()
                 .map(|name| (name.clone(), name.to_string()))
@@ -172,6 +171,8 @@ impl EcmascriptChunkPlaceable for EcmascriptModuleLocalsModule {
                 .map(|(k, v)| (k, RcStr::from(v)))
                 .collect();
             Some(mangled)
+        } else {
+            None
         };
 
         let exports = EsmExports {

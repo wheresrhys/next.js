@@ -32,13 +32,29 @@ it('exported lets are live', () => {
   expect(liveExports.foo).toBe('new')
 })
 
-it('exported bindings that are not mutated still work correctly', () => {
-  // Note: With module splitting enabled for export name mangling,
-  // all exports go through the facade which uses getters.
-  // This tests that the values are still correct, even if they use getters.
-  expect(liveExports.obviouslyneverMutated).toBe('obviouslyneverMutated')
-  expect(liveExports.neverMutated).toBe('neverMutated')
-  expect(constDefaultExportFunction.default()).toBe('defaultFunction')
+it('exported bindings that are not mutated are not live', () => {
+  expect(
+    Object.getOwnPropertyDescriptor(liveExports, 'obviouslyneverMutated')
+  ).toEqual({
+    configurable: false,
+    enumerable: true,
+    value: 'obviouslyneverMutated',
+    writable: false,
+  })
+  expect(Object.getOwnPropertyDescriptor(liveExports, 'neverMutated')).toEqual({
+    configurable: false,
+    enumerable: true,
+    value: 'neverMutated',
+    writable: false,
+  })
+  expect(
+    Object.getOwnPropertyDescriptor(constDefaultExportFunction, 'default')
+  ).toEqual({
+    configurable: false,
+    enumerable: true,
+    value: constDefaultExportFunction.default,
+    writable: false,
+  })
 })
 
 it('exported bindings that are free vars are live', () => {

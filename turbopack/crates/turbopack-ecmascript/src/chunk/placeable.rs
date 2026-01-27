@@ -19,7 +19,10 @@ use turbopack_core::{
     resolve::{FindContextFileResult, ModulePart, find_context_file, package_json},
 };
 
-use crate::references::{async_module::OptionAsyncModule, esm::EsmExports};
+use crate::references::{
+    async_module::OptionAsyncModule,
+    esm::{EsmExport, EsmExports},
+};
 
 #[turbo_tasks::value_trait]
 pub trait EcmascriptChunkPlaceable: ChunkableModule + Module {
@@ -261,17 +264,28 @@ pub enum EcmascriptExports {
 #[turbo_tasks::value_impl]
 impl EcmascriptExports {
     /// Determines whether to split the module into locals + facade.
-    /// Returns true for ESM modules that have star exports (re-exports).
-    /// The locals module will have mangled export names, while the facade
-    /// preserves original names for CommonJS require and namespace imports.
+    /// Returns true for ESM modules when:
+    /// - `mangle_export_names` is true (facade preserves original names), or
+    /// - The module has re-exports (star exports, imported bindings, or namespaces)
     #[turbo_tasks::function]
-    pub async fn split_locals_and_reexports(&self) -> Result<Vc<bool>> {
+    pub async fn split_locals_and_reexports(&self, mangle_export_names: bool) -> Result<Vc<bool>> {
         Ok(match self {
-            // Only split ESM modules that have star exports (re-exports)
-            // This enables export name mangling for the locals module
             EcmascriptExports::EsmExports(exports) => {
-                let exports = exports.await?;
-                Vc::cell(!exports.star_exports.is_empty())
+                if mangle_export_names {
+                    // Always split when mangling - facade preserves original names
+                    Vc::cell(true)
+                } else {
+                    // Split only when there are re-exports
+                    let exports = exports.await?;
+                    let has_reexports = !exports.star_exports.is_empty()
+                        || exports.exports.iter().any(|(_, export)| {
+                            matches!(
+                                export,
+                                EsmExport::ImportedBinding(..) | EsmExport::ImportedNamespace(_)
+                            )
+                        });
+                    Vc::cell(has_reexports)
+                }
             }
             _ => Vc::cell(false),
         })

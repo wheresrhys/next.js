@@ -488,7 +488,7 @@ async fn emit_star_exports_issue(source_ident: Vc<AssetIdent>, message: RcStr) -
 pub struct EsmExports {
     /// Explicit exports
     pub exports: BTreeMap<RcStr, EsmExport>,
-    /// Unexpanded `export * from ...` statements (expanded in `expand_star_exports`)
+/// Unexpanded `export * from ...` statements (expanded in `expand_star_exports`)
     pub star_exports: Vec<ResolvedVc<Box<dyn ModuleReference>>>,
     /// Mangled export names for this module. If Some, exports are mangled.
     /// Maps original export name → mangled (shortened) export name.
@@ -532,6 +532,7 @@ impl EsmExports {
             EsmExports {
                 exports,
                 star_exports: vec![module_reference],
+                mangled_names: None,
             }
             .resolved_cell(),
         )

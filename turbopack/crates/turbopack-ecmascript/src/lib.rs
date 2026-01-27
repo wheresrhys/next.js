@@ -274,6 +274,8 @@ pub struct EcmascriptOptions {
     pub inline_helpers: bool,
     /// Whether to infer side effect free modules via local analysis. Defaults to true.
     pub infer_module_side_effects: bool,
+    /// Whether to mangle (shorten) exported names for smaller bundle sizes.
+    pub mangle_export_names: bool,
 }
 
 #[turbo_tasks::value]

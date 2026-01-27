@@ -2,13 +2,26 @@
 // Each module should independently mangle its export keys
 // The wiring between modules should use correct mangled names
 
-import { finalExportName, finalFunctionName, localInC } from './c'
+import {
+  finalExportName,
+  finalFunctionName,
+  localInC,
+  finalDefaultExport,
+} from './c'
+import defaultFromC from './c'
 
 it('should handle re-export chain with mangling', () => {
   // Values should flow through the chain correctly
   expect(finalExportName).toBe('from-a')
   expect(finalFunctionName()).toBe('func-a')
   expect(localInC).toBe('local-c')
+})
+
+it('should handle default exports through re-export chain', () => {
+  // Default export from a.js, re-exported through b.js and c.js
+  expect(finalDefaultExport()).toBe('default-from-a')
+  // Direct default export from c.js
+  expect(defaultFromC()).toBe('default-from-c')
 })
 
 // Also test direct imports from middle of chain
@@ -32,8 +45,8 @@ it('should handle imports from source', () => {
 })
 
 it('should have exports info in source module (via __webpack_exports_info__)', () => {
-  // Modules are only split (and mangled) when they have re-exports.
-  // Since a.js has no re-exports, mangledName will be null.
+  // When mangling is enabled, all ESM modules are split into locals+facade
+  // so exports have mangled names
   console.log('exportsInfo from a.js:', JSON.stringify(exportsInfo, null, 2))
 
   // Verify the structure
@@ -41,8 +54,9 @@ it('should have exports info in source module (via __webpack_exports_info__)', (
   expect(exportsInfo.veryLongOriginalExportName).toBeDefined()
   expect(exportsInfo.anotherLongFunctionName).toBeDefined()
 
-  // For modules without re-exports, mangledName is null
-  // (mangling only applies to modules that are split into locals+facade)
+  // Exports should be marked as used and have mangled names
   expect(exportsInfo.veryLongOriginalExportName.used).toBe(true)
+  expect(exportsInfo.veryLongOriginalExportName.mangledName).toBeDefined()
   expect(exportsInfo.anotherLongFunctionName.used).toBe(true)
+  expect(exportsInfo.anotherLongFunctionName.mangledName).toBeDefined()
 })
