@@ -818,7 +818,11 @@ impl EcmascriptChunkPlaceable for EcmascriptModuleAsset {
         part: ModulePart,
     ) -> Result<Vc<Box<dyn EcmascriptChunkPlaceable>>> {
         // Only split if the module has re-exports that need to be separated
-        let should_split = *self.get_exports().split_locals_and_reexports().await?;
+        let mangle = self.options().await?.mangle_export_names;
+        let should_split = *self
+            .get_exports()
+            .split_locals_and_reexports(mangle)
+            .await?;
 
         Ok(match part {
             ModulePart::Locals if should_split => {

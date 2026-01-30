@@ -331,7 +331,7 @@ pub async fn get_client_module_options_context(
             enable_import_as_bytes: *next_config.turbopack_import_type_bytes().await?,
             source_maps,
             infer_module_side_effects: *next_config.turbopack_infer_module_side_effects().await?,
-            mangle_export_names: !*no_mangling.await?,
+            mangle_export_names: *next_config.turbo_minify(mode).await? && !*no_mangling.await?,
             ..Default::default()
         },
         css: CssOptionsContext {

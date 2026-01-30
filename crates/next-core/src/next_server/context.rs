@@ -584,7 +584,7 @@ pub async fn get_server_module_options_context(
             ignore_dynamic_requests: true,
             source_maps,
             infer_module_side_effects: *next_config.turbopack_infer_module_side_effects().await?,
-            mangle_export_names: !*no_mangling.await?,
+            mangle_export_names: *next_config.turbo_minify(mode).await? && !*no_mangling.await?,
             ..Default::default()
         },
         execution_context: Some(execution_context),
