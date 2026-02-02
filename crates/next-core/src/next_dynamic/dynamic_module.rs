@@ -102,7 +102,7 @@ impl EcmascriptChunkPlaceable for NextDynamicEntryModule {
                 Vc::upcast(*self.module),
                 dynamic_ref_description(),
                 ExportUsage::all(),
-));
+            ));
         EsmExports::reexport(module_reference)
     }
 }
